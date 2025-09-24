@@ -1,0 +1,1878 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Torneo di Tennis - Tutti contro Tutti</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 20%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255, 119, 198, 0.2) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(120, 255, 198, 0.15) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: rgba(30, 30, 46, 0.85);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 40px;
+            border-radius: 24px;
+            box-shadow: 
+                0 25px 50px rgba(0, 0, 0, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+        }
+        
+        h1 {
+            text-align: center;
+            background: linear-gradient(135deg, #ff6b6b, #ffd93d, #6bcf7f, #4ecdc4, #45b7d1);
+            background-size: 300% 300%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradientShift 6s ease-in-out infinite;
+            margin-bottom: 40px;
+            font-size: 3em;
+            font-weight: 800;
+            text-shadow: none;
+            letter-spacing: -2px;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        
+        .section {
+            margin-bottom: 40px;
+        }
+        
+        h2 {
+            color: #e2e8f0;
+            border-bottom: 2px solid transparent;
+            background: linear-gradient(90deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05)) padding-box,
+                        linear-gradient(90deg, #ff6b6b, #4ecdc4) border-box;
+            border-image: linear-gradient(90deg, #ff6b6b, #4ecdc4) 1;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+            font-size: 1.9em;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-bottom: 20px;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 
+                0 10px 30px rgba(0, 0, 0, 0.3),
+                0 0 0 1px rgba(255, 255, 255, 0.1);
+            background: rgba(30, 30, 46, 0.6);
+            backdrop-filter: blur(10px);
+        }
+        
+        th, td {
+            border: none;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 16px 12px;
+            text-align: center;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            color: #e2e8f0;
+        }
+        
+        th {
+            background: linear-gradient(135deg, rgba(255, 107, 107, 0.2), rgba(78, 205, 196, 0.2));
+            color: #ffffff;
+            font-weight: 700;
+            font-size: 0.95em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+        }
+
+        th::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #ff6b6b, #4ecdc4);
+        }
+        
+        tr:nth-child(even) td {
+            background-color: rgba(255, 255, 255, 0.02);
+        }
+        
+        tr:hover td {
+            background: linear-gradient(90deg, rgba(255, 107, 107, 0.1), rgba(78, 205, 196, 0.1));
+            transform: scale(1.02);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+        
+        .match-cell {
+            padding: 8px !important;
+            width: 90px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .match-cell:hover {
+            background: linear-gradient(135deg, rgba(255, 107, 107, 0.3), rgba(78, 205, 196, 0.3)) !important;
+            transform: scale(1.08);
+            z-index: 10;
+            border-radius: 8px;
+            box-shadow: 0 8px 32px rgba(255, 107, 107, 0.4);
+        }
+        
+        .player-cell {
+            background: linear-gradient(135deg, rgba(255, 107, 107, 0.8), rgba(78, 205, 196, 0.8)) !important;
+            color: white;
+            font-weight: 700;
+            width: 120px;
+            font-size: 0.9em;
+            cursor: help;
+            position: relative;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .player-cell:hover::after,
+        .header-player:hover::after {
+            content: attr(data-full-name);
+            position: absolute;
+            background: linear-gradient(135deg, rgba(30, 30, 46, 0.95), rgba(45, 45, 65, 0.95));
+            backdrop-filter: blur(20px);
+            color: #e2e8f0;
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 500;
+            white-space: nowrap;
+            z-index: 1000;
+            box-shadow: 
+                0 10px 30px rgba(0, 0, 0, 0.4),
+                0 0 0 1px rgba(255, 255, 255, 0.1);
+            animation: tooltipSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes tooltipSlideIn {
+            from { 
+                opacity: 0; 
+                transform: translateX(-50%) translateY(10px) scale(0.9);
+            }
+            to { 
+                opacity: 1; 
+                transform: translateX(-50%) translateY(0) scale(1);
+            }
+        }
+
+        .player-cell:hover::after {
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            margin-bottom: 5px;
+        }
+
+        .header-player:hover::after {
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            margin-top: 5px;
+        }
+
+        @keyframes tooltipFadeIn {
+            from { opacity: 0; transform: translateX(-50%) translateY(5px); }
+            to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+
+        .header-player {
+            cursor: help;
+            position: relative;
+        }
+        
+        .completed-match {
+            background: linear-gradient(135deg, rgba(107, 255, 107, 0.2), rgba(78, 205, 196, 0.2)) !important;
+            font-weight: 700;
+            border: 1px solid rgba(107, 255, 107, 0.3);
+            border-radius: 8px;
+        }
+        
+        .match-details {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            line-height: 1.3;
+            padding: 2px;
+        }
+        
+        .match-result {
+            font-weight: bold;
+            color: #2d3748;
+            font-size: 13px;
+        }
+        
+        .set-details {
+            font-size: 9px;
+            color: #4a5568;
+            white-space: nowrap;
+        }
+        
+        .ranking-table {
+            background: linear-gradient(135deg, rgba(30, 30, 46, 0.9), rgba(45, 45, 65, 0.9));
+            border-radius: 20px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .ranking-table th {
+            background: linear-gradient(135deg, rgba(255, 107, 107, 0.2), rgba(78, 205, 196, 0.2));
+            color: #ffffff;
+            font-size: 0.9em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .ranking-table td {
+            background: rgba(30, 30, 46, 0.4);
+            font-size: 0.95em;
+            font-weight: 500;
+            color: #e2e8f0;
+        }
+        
+        .first-place {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 237, 78, 0.3)) !important;
+            font-weight: 800;
+            animation: championGlow 3s ease-in-out infinite alternate;
+            border: 1px solid rgba(255, 215, 0, 0.5);
+            border-radius: 8px;
+        }
+        
+        .second-place {
+            background: linear-gradient(135deg, rgba(192, 192, 192, 0.3), rgba(229, 229, 229, 0.3)) !important;
+            font-weight: 700;
+            border: 1px solid rgba(192, 192, 192, 0.5);
+            border-radius: 8px;
+        }
+        
+        .third-place {
+            background: linear-gradient(135deg, rgba(205, 127, 50, 0.3), rgba(218, 165, 32, 0.3)) !important;
+            font-weight: 700;
+            border: 1px solid rgba(205, 127, 50, 0.5);
+            border-radius: 8px;
+        }
+
+        @keyframes championGlow {
+            from { 
+                box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+                transform: scale(1);
+            }
+            to { 
+                box-shadow: 0 0 40px rgba(255, 215, 0, 0.6);
+                transform: scale(1.02);
+            }
+        }
+        
+        .points-legend {
+            background: linear-gradient(135deg, rgba(30, 30, 46, 0.8), rgba(45, 45, 65, 0.8));
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 25px;
+            border-radius: 16px;
+            margin-bottom: 25px;
+            box-shadow: 
+                0 10px 30px rgba(0, 0, 0, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .points-legend::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #ff6b6b, #4ecdc4);
+        }
+
+        .points-legend h3 {
+            margin-top: 0;
+            color: #e2e8f0;
+            font-weight: 700;
+        }
+
+        .points-legend ul {
+            margin: 15px 0;
+            padding-left: 25px;
+        }
+
+        .points-legend li {
+            margin: 12px 0;
+            color: #cbd5e0;
+            font-weight: 500;
+        }
+
+        .points-legend p {
+            color: #a0aec0;
+            font-style: italic;
+        }
+        
+        .export-btn {
+            background: linear-gradient(135deg, #ff6b6b, #4ecdc4);
+            color: white;
+            border: none;
+            padding: 16px 32px;
+            border-radius: 12px;
+            cursor: pointer;
+            margin: 12px 8px;
+            font-weight: 700;
+            font-size: 0.9em;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 
+                0 8px 25px rgba(255, 107, 107, 0.3),
+                0 0 0 1px rgba(255, 255, 255, 0.1);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .export-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .export-btn:hover::before {
+            left: 100%;
+        }
+        
+        .export-btn:hover {
+            background: linear-gradient(135deg, #ff5252, #26a69a);
+            transform: translateY(-4px) scale(1.05);
+            box-shadow: 
+                0 15px 35px rgba(255, 107, 107, 0.4),
+                0 0 0 1px rgba(255, 255, 255, 0.2);
+        }
+
+        .reset-btn {
+            background: linear-gradient(135deg, #ff6b6b, #e74c3c);
+            box-shadow: 
+                0 8px 25px rgba(231, 76, 60, 0.3),
+                0 0 0 1px rgba(255, 255, 255, 0.1);
+        }
+
+        .reset-btn:hover {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            box-shadow: 
+                0 15px 35px rgba(231, 76, 60, 0.5),
+                0 0 0 1px rgba(255, 255, 255, 0.2);
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 25px;
+            margin: 40px 0;
+        }
+        
+        .stat-item {
+            background: linear-gradient(135deg, rgba(255, 107, 107, 0.1), rgba(78, 205, 196, 0.1));
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #e2e8f0;
+            padding: 25px;
+            border-radius: 16px;
+            text-align: center;
+            box-shadow: 
+                0 10px 30px rgba(0, 0, 0, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #ff6b6b, #4ecdc4);
+        }
+
+        .stat-item:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 
+                0 20px 40px rgba(0, 0, 0, 0.3),
+                0 0 0 1px rgba(255, 255, 255, 0.2);
+        }
+
+        .stat-item div:first-child {
+            font-size: 0.95em;
+            opacity: 0.8;
+            margin-bottom: 8px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-item div:last-child {
+            font-size: 2.2em;
+            font-weight: 800;
+            background: linear-gradient(135deg, #ff6b6b, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .match-diagonal {
+            background: linear-gradient(135deg, #a0aec0, #718096) !important;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 15, 35, 0.8);
+            backdrop-filter: blur(10px);
+        }
+        
+        .modal-content {
+            background: linear-gradient(135deg, rgba(30, 30, 46, 0.95), rgba(45, 45, 65, 0.95));
+            backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin: 3% auto;
+            padding: 40px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 650px;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 
+                0 25px 50px rgba(0, 0, 0, 0.5),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            animation: modalSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+
+        .modal-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #ff6b6b, #4ecdc4);
+        }
+
+        @keyframes modalSlideIn {
+            from { 
+                opacity: 0; 
+                transform: translateY(-100px) scale(0.8);
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0) scale(1);
+            }
+        }
+        
+        .close {
+            color: #a0aec0;
+            float: right;
+            font-size: 36px;
+            font-weight: 300;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            line-height: 1;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .close:hover {
+            color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.1);
+            transform: rotate(90deg) scale(1.1);
+        }
+        
+        .match-form {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            margin-top: 30px;
+        }
+        
+        .set-form {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 20px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .set-form:hover {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.04));
+            border-color: rgba(255, 107, 107, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .set-form label {
+            font-weight: 700;
+            color: #e2e8f0;
+            min-width: 80px;
+            font-size: 1em;
+        }
+
+        .set-form span {
+            font-weight: 600;
+            color: #cbd5e0;
+            font-size: 0.9em;
+        }
+
+        .set-input {
+            width: 70px;
+            height: 50px;
+            padding: 12px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: 700;
+            background: rgba(30, 30, 46, 0.6);
+            color: #e2e8f0;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .set-input:focus {
+            outline: none;
+            border-color: #ff6b6b;
+            box-shadow: 
+                0 0 0 4px rgba(255, 107, 107, 0.2),
+                0 8px 25px rgba(255, 107, 107, 0.3);
+            background: rgba(30, 30, 46, 0.8);
+            transform: scale(1.05);
+        }
+
+        .set-input::placeholder {
+            color: #718096;
+        }
+        
+        .save-match-btn {
+            background: linear-gradient(135deg, #6bcf7f, #4ecdc4);
+            color: white;
+            border: none;
+            padding: 16px 32px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 
+                0 8px 25px rgba(107, 207, 127, 0.3),
+                0 0 0 1px rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .save-match-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .save-match-btn:hover::before {
+            left: 100%;
+        }
+        
+        .save-match-btn:hover {
+            background: linear-gradient(135deg, #4ecdc4, #26a69a);
+            transform: translateY(-4px) scale(1.05);
+            box-shadow: 
+                0 15px 35px rgba(107, 207, 127, 0.4),
+                0 0 0 1px rgba(255, 255, 255, 0.2);
+        }
+        
+        .delete-match-btn {
+            background: linear-gradient(135deg, #ff6b6b, #e74c3c);
+            color: white;
+            border: none;
+            padding: 16px 32px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-left: 15px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 
+                0 8px 25px rgba(255, 107, 107, 0.3),
+                0 0 0 1px rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .delete-match-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .delete-match-btn:hover::before {
+            left: 100%;
+        }
+        
+        .delete-match-btn:hover {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            transform: translateY(-4px) scale(1.05);
+            box-shadow: 
+                0 15px 35px rgba(255, 107, 107, 0.5),
+                0 0 0 1px rgba(255, 255, 255, 0.2);
+        }
+        
+        .results-table {
+            font-size: 12px;
+            background: #ffffff !important;
+            border-radius: 16px !important;
+            overflow: hidden !important;
+            box-shadow: 
+                0 10px 30px rgba(0, 0, 0, 0.3) !important,
+                0 0 0 1px rgba(255, 255, 255, 0.1) !important;
+        }
+        
+        .results-table td {
+            padding: 6px !important;
+            background: #ffffff !important;
+            color: #1f2937 !important;
+            border: 1px solid #e5e7eb !important;
+        }
+
+        .results-table th {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8) !important;
+            color: #ffffff !important;
+            font-weight: 700 !important;
+            font-size: 0.95em !important;
+            text-transform: uppercase !important;
+            letter-spacing: 1px !important;
+            border: none !important;
+        }
+
+        .results-table tr:nth-child(even) td {
+            background-color: #f8fafc !important;
+        }
+        
+        .results-table tr:hover td {
+            background: #e0f2fe !important;
+        }
+
+        .empty-match {
+            color: #a0aec0;
+            font-style: italic;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .container {
+                padding: 25px;
+            }
+            
+            h1 {
+                font-size: 2.5em;
+            }
+
+            .match-cell {
+                width: 85px;
+                font-size: 11px;
+            }
+
+            .stats {
+                grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+                gap: 20px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 8px;
+            }
+
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 2em;
+                margin-bottom: 30px;
+            }
+
+            .match-cell {
+                width: 75px;
+                font-size: 10px;
+                padding: 6px !important;
+            }
+
+            .export-btn {
+                padding: 14px 20px;
+                margin: 8px 4px;
+                font-size: 0.8em;
+            }
+
+            .modal-content {
+                width: 95%;
+                padding: 25px;
+                margin: 5% auto;
+            }
+
+            .set-form {
+                flex-wrap: wrap;
+                gap: 15px;
+                padding: 15px;
+            }
+
+            .set-input {
+                width: 60px;
+                height: 45px;
+                font-size: 16px;
+            }
+
+            table {
+                font-size: 0.85em;
+            }
+
+            th, td {
+                padding: 8px 6px;
+            }
+
+            .stat-item {
+                padding: 20px;
+            }
+
+            .stat-item div:last-child {
+                font-size: 2em;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .match-cell {
+                width: 65px;
+                font-size: 9px;
+                padding: 4px !important;
+            }
+
+            .export-btn {
+                padding: 12px 16px;
+                font-size: 0.75em;
+            }
+
+            .save-match-btn, .delete-match-btn {
+                padding: 14px 24px;
+                font-size: 0.8em;
+            }
+
+            .set-input {
+                width: 50px;
+                height: 40px;
+                font-size: 14px;
+            }
+
+            .modal-content {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎾 Torneo di Tennis - Tutti contro Tutti</h1>
+        
+        <div class="points-legend">
+            <h3>📊 Sistema di Punteggio</h3>
+            <ul>
+                <li><strong>3 punti</strong> - Vittoria 2-0 (set)</li>
+                <li><strong>2 punti</strong> - Vittoria 2-1 (set)</li>
+                <li><strong>1 punto</strong> - Sconfitta 2-1 (set)</li>
+                <li><strong>0 punti</strong> - Sconfitta 2-0 (set)</li>
+            </ul>
+            <p><em>💡 Clicca su una cella della tabella risultati per inserire il punteggio dettagliato di ogni set.</em></p>
+        </div>
+        
+        <div class="stats" id="tournamentStats">
+            <div class="stat-item">
+                <div>Partite Giocate</div>
+                <div id="matchesPlayed">0</div>
+            </div>
+            <div class="stat-item">
+                <div>Partite Totali</div>
+                <div id="totalMatches">66</div>
+            </div>
+            <div class="stat-item">
+                <div>Completamento</div>
+                <div id="completionPercentage">0%</div>
+            </div>
+            <div class="stat-item">
+                <div>Set Giocati</div>
+                <div id="totalSets">0</div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>🏆 Classifica Generale</h2>
+            <table class="ranking-table" id="rankingTable">
+                <thead>
+                    <tr>
+                        <th>Pos.</th>
+                        <th>Giocatore</th>
+                        <th>Punti</th>
+                        <th>Partite</th>
+                        <th>V-S</th>
+                        <th>Set V-P</th>
+                        <th>Diff. Set</th>
+                        <th>Games V-P</th>
+                        <th>Diff. Games</th>
+                        <th>Media</th>
+                    </tr>
+                </thead>
+                <tbody id="rankingBody">
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="section">
+            <h2>📋 Tabella Risultati</h2>
+            <p><em>💡 Clicca su una cella per inserire il risultato dettagliato del match</em></p>
+            <div style="overflow-x: auto;">
+                <table id="resultsTable" class="results-table">
+                    <thead id="resultsHeader">
+                    </thead>
+                    <tbody id="resultsBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="section">
+            <button class="export-btn" onclick="exportToCSV()">📊 Esporta Classifica</button>
+            <button class="export-btn" onclick="exportResultsToCSV()">📋 Esporta Risultati</button>
+            <button class="export-btn" onclick="exportDetailedResults()">📈 Esporta Dettagliati</button>
+            <button class="export-btn" onclick="saveToLocal()" style="background: linear-gradient(135deg, #10b981, #059669);">💾 Salva Locale</button>
+            <button class="export-btn" onclick="loadFromLocal()" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8);">📥 Carica Locale</button>
+            <button class="export-btn" onclick="exportAllData()" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">📤 Esporta JSON</button>
+            <button class="export-btn" onclick="importData()" style="background: linear-gradient(135deg, #06b6d4, #0891b2);">📥 Importa JSON</button>
+            <button class="export-btn reset-btn" onclick="resetTournament()">🔄 Reset Torneo</button>
+        </div>
+    </div>
+
+    <!-- Modal per inserimento risultato -->
+    <div id="matchModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 id="modalTitle">Inserisci Risultato Match</h2>
+            <div class="match-form" id="matchForm">
+                <div id="setsContainer"></div>
+                <div>
+                    <button class="save-match-btn" onclick="saveMatch()">💾 Salva Risultato</button>
+                    <button class="delete-match-btn" onclick="deleteMatch()">🗑️ Elimina Risultato</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sistema di salvataggio GitHub Pages compatibile -->
+    <script>
+        // 💾 SISTEMA SALVATAGGIO LOCALE AVANZATO
+        const STORAGE_KEY = 'torneo-tennis-2025';
+        
+        // 📊 SALVA DATI
+        function saveToLocal() {
+            try {
+                const tournamentData = {
+                    matches: matches,
+                    playerStats: playerStats,
+                    players: players,
+                    lastUpdated: new Date().toISOString(),
+                    version: '2.0'
+                };
+                
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(tournamentData));
+                console.log('💾 Dati salvati localmente');
+                showNotification('💾 Torneo salvato!', 'success');
+                
+                // Salva anche nel sessionStorage come backup
+                sessionStorage.setItem(STORAGE_KEY + '_backup', JSON.stringify(tournamentData));
+                
+            } catch (error) {
+                console.error('❌ Errore salvataggio:', error);
+                showNotification('⚠️ Errore durante il salvataggio', 'error');
+            }
+        }
+        
+        // 📥 CARICA DATI
+        function loadFromLocal() {
+            try {
+                let saved = localStorage.getItem(STORAGE_KEY);
+                
+                // Se non trova in localStorage, prova sessionStorage
+                if (!saved) {
+                    saved = sessionStorage.getItem(STORAGE_KEY + '_backup');
+                }
+                
+                if (saved) {
+                    const data = JSON.parse(saved);
+                    matches = data.matches || matches;
+                    playerStats = data.playerStats || playerStats;
+                    
+                    updateAllDisplays();
+                    
+                    const lastUpdate = new Date(data.lastUpdated);
+                    const timeStr = lastUpdate.toLocaleString();
+                    console.log('✅ Dati caricati! Ultimo salvataggio:', timeStr);
+                    showNotification(`📥 Torneo caricato! (${timeStr})`, 'success');
+                } else {
+                    console.log('🆕 Nuovo torneo');
+                    showNotification('🆕 Nuovo torneo iniziato!', 'info');
+                }
+                
+            } catch (error) {
+                console.error('❌ Errore caricamento:', error);
+                showNotification('⚠️ Errore durante il caricamento', 'error');
+            }
+        }
+        
+        // 📤 ESPORTA TUTTO (Per GitHub Gist)
+        function exportAllData() {
+            try {
+                const tournamentData = {
+                    matches: matches,
+                    playerStats: playerStats,
+                    players: players,
+                    lastUpdated: new Date().toISOString(),
+                    tournamentName: "Torneo Tennis 2025",
+                    version: '2.0'
+                };
+                
+                const jsonData = JSON.stringify(tournamentData, null, 2);
+                
+                // Crea file scaricabile
+                const blob = new Blob([jsonData], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `torneo-tennis-${new Date().toISOString().split('T')[0]}.json`;
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+                
+                showNotification('📤 Dati esportati in JSON!', 'success');
+                console.log('📤 Export completato');
+                
+            } catch (error) {
+                console.error('❌ Errore export:', error);
+                showNotification('⚠️ Errore durante l\'export', 'error');
+            }
+        }
+        
+        // 📥 IMPORTA DATI
+        function importData() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.style.display = 'none';
+            
+            input.onchange = function(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const data = JSON.parse(e.target.result);
+                        
+                        // Verifica formato
+                        if (data.matches && data.playerStats) {
+                            matches = data.matches;
+                            playerStats = data.playerStats;
+                            
+                            updateAllDisplays();
+                            saveToLocal(); // Salva dopo l'import
+                            
+                            showNotification('📥 Dati importati con successo!', 'success');
+                            console.log('📥 Import completato');
+                        } else {
+                            throw new Error('Formato file non valido');
+                        }
+                        
+                    } catch (error) {
+                        console.error('❌ Errore import:', error);
+                        showNotification('⚠️ File non valido', 'error');
+                    }
+                };
+                
+                reader.readAsText(file);
+            };
+            
+            document.body.appendChild(input);
+            input.click();
+            document.body.removeChild(input);
+        }
+        
+        // 🔄 AGGIORNA TUTTE LE VISUALIZZAZIONI
+        function updateAllDisplays() {
+            // Aggiorna tutti i match nella tabella
+            Object.keys(matches).forEach(key => {
+                updateMatchDisplay(key);
+            });
+            
+            calculatePoints();
+            updateRanking();
+            updateStats();
+        }
+        
+        // 🔔 SISTEMA NOTIFICHE
+        function showNotification(message, type = 'info') {
+            // Crea elemento notifica se non esiste
+            let notification = document.getElementById('notification');
+            if (!notification) {
+                notification = document.createElement('div');
+                notification.id = 'notification';
+                notification.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    padding: 15px 20px;
+                    border-radius: 10px;
+                    color: white;
+                    font-weight: 600;
+                    z-index: 10000;
+                    opacity: 0;
+                    transition: all 0.3s ease;
+                    max-width: 300px;
+                    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+                `;
+                document.body.appendChild(notification);
+            }
+            
+            // Colori in base al tipo
+            const colors = {
+                'success': 'linear-gradient(135deg, #10b981, #059669)',
+                'error': 'linear-gradient(135deg, #ef4444, #dc2626)',
+                'info': 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
+                'warning': 'linear-gradient(135deg, #f59e0b, #d97706)'
+            };
+            
+            notification.style.background = colors[type] || colors['info'];
+            notification.textContent = message;
+            notification.style.opacity = '1';
+            notification.style.transform = 'translateY(0)';
+            
+            // Rimuovi dopo 4 secondi
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                notification.style.transform = 'translateY(-20px)';
+            }, 4000);
+        }
+        
+        // 💾 SALVATAGGIO AUTOMATICO ogni 30 secondi
+        setInterval(() => {
+            if (Object.keys(matches).some(key => matches[key].completed)) {
+                saveToLocal();
+            }
+        }, 30000);
+        
+        // 🔄 CARICA ALL'AVVIO
+        document.addEventListener('DOMContentLoaded', function() {
+            // Piccolo delay per permettere l'inizializzazione
+            setTimeout(() => {
+                loadFromLocal();
+            }, 500);
+        });
+    </script>
+        // Configurazione del torneo - Nomi più realistici per i test
+        const players = [
+            'Alessandro Rossi', 'Marco Bianchi', 'Giuseppe Verdi', 'Francesco Romano',
+            'Andrea Colombo', 'Matteo Ferrari', 'Lorenzo Marino', 'Davide Ricci',
+            'Simone Greco', 'Federico Costa', 'Gabriele Conti', 'Riccardo Villa'
+        ];
+        
+        let matches = {};
+        let playerStats = {};
+        let currentMatchKey = '';
+        
+        // Inizializza le statistiche dei giocatori
+        function initializePlayerStats() {
+            players.forEach(player => {
+                playerStats[player] = {
+                    points: 0,
+                    matches: 0,
+                    wins: 0,
+                    losses: 0,
+                    setsWon: 0,
+                    setsLost: 0,
+                    gamesWon: 0,
+                    gamesLost: 0
+                };
+            });
+        }
+        
+        // Inizializza la matrice dei match
+        function initializeMatches() {
+            matches = {};
+            for (let i = 0; i < players.length; i++) {
+                for (let j = 0; j < players.length; j++) {
+                    if (i !== j) {
+                        const key = `${players[i]}vs${players[j]}`;
+                        matches[key] = {
+                            player1: players[i],
+                            player2: players[j],
+                            sets: [],
+                            player1Sets: 0,
+                            player2Sets: 0,
+                            completed: false
+                        };
+                    }
+                }
+            }
+        }
+        
+        // Crea la tabella dei risultati
+        function createResultsTable() {
+            const header = document.getElementById('resultsHeader');
+            const body = document.getElementById('resultsBody');
+            
+            // Crea l'header
+            let headerRow = '<tr><th style="width: 120px; position: sticky; left: 0; z-index: 10;">Giocatori</th>';
+            players.forEach(player => {
+                const displayName = player.length > 10 ? player.substring(0, 8) + '...' : player;
+                headerRow += `<th class="header-player" style="min-width: 90px; font-size: 10px;" 
+                             data-full-name="${player}" 
+                             title="Clicca per vedere: ${player}">${displayName}</th>`;
+            });
+            headerRow += '</tr>';
+            header.innerHTML = headerRow;
+            
+            // Crea le righe
+            let bodyHTML = '';
+            players.forEach((player1, i) => {
+                const displayName1 = player1.length > 10 ? player1.substring(0, 8) + '...' : player1;
+                let row = `<tr><td class="player-cell" style="position: sticky; left: 0; z-index: 5;" 
+                          data-full-name="${player1}" 
+                          title="Giocatore: ${player1}">${displayName1}</td>`;
+                players.forEach((player2, j) => {
+                    if (i === j) {
+                        row += '<td class="match-diagonal">—</td>';
+                    } else {
+                        const key = `${player1}vs${player2}`;
+                        const cellId = `cell-${i}-${j}`;
+                        row += `<td id="${cellId}" class="match-cell" 
+                               onclick="openMatchModal('${key}', '${player1}', '${player2}')"
+                               style="background: rgba(30, 30, 46, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; min-height: 50px; cursor: pointer;"
+                               title="Match: ${player1} vs ${player2}">
+                            <div class="match-details" id="summary-${key}" style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 40px; gap: 6px;">
+                                <div class="empty-match" style="color: #d1d5db; font-style: italic; font-weight: 600;">vs</div>
+                            </div>
+                        </td>`;
+                    }
+                });
+                row += '</tr>';
+                bodyHTML += row;
+            });
+            body.innerHTML = bodyHTML;
+        }
+        
+        // Apre il modal per inserire il risultato
+        function openMatchModal(key, player1, player2) {
+            console.log('Apertura modal per:', key, player1, 'vs', player2);
+            
+            currentMatchKey = key;
+            const modal = document.getElementById('matchModal');
+            const title = document.getElementById('modalTitle');
+            const container = document.getElementById('setsContainer');
+            
+            if (!modal || !title || !container) {
+                console.error('Elementi modal non trovati');
+                return;
+            }
+            
+            title.textContent = `🎾 ${player1} vs ${player2}`;
+            
+            // Crea i form per i set
+            let setsHTML = '';
+            const match = matches[key];
+            
+            if (!match) {
+                console.error('Match non trovato:', key);
+                return;
+            }
+            
+            // Crea fino a 3 set
+            for (let i = 0; i < 3; i++) {
+                const set = match.sets[i] || { player1Games: '', player2Games: '' };
+                const setNum = i + 1;
+                
+                setsHTML += `
+                    <div class="set-form">
+                        <label>Set ${setNum}:</label>
+                        <span>${player1}</span>
+                        <input type="number" id="p1-set${setNum}" class="set-input" min="0" max="7" 
+                               value="${set.player1Games}" placeholder="0">
+                        <span>-</span>
+                        <input type="number" id="p2-set${setNum}" class="set-input" min="0" max="7" 
+                               value="${set.player2Games}" placeholder="0">
+                        <span>${player2}</span>
+                    </div>
+                `;
+            }
+            
+            container.innerHTML = setsHTML;
+            modal.style.display = 'block';
+            
+            console.log('Modal aperto, focus su primo input');
+            
+            // Focus sul primo input
+            setTimeout(() => {
+                const firstInput = document.getElementById('p1-set1');
+                if (firstInput) {
+                    firstInput.focus();
+                    console.log('Focus impostato su primo input');
+                } else {
+                    console.error('Primo input non trovato');
+                }
+            }, 100);
+        }
+        
+        // Chiude il modal
+        function closeModal() {
+            document.getElementById('matchModal').style.display = 'none';
+            currentMatchKey = '';
+        }
+        
+        // Valida il punteggio di un set
+        function isValidSetScore(games1, games2) {
+            // Entrambi i valori devono essere numerici e >= 0
+            if (games1 < 0 || games2 < 0 || !Number.isInteger(games1) || !Number.isInteger(games2)) {
+                return false;
+            }
+            
+            // Set normale: 6-4, 6-3, 6-2, 6-1, 6-0
+            if (games1 === 6 && games2 <= 4) return true;
+            if (games2 === 6 && games1 <= 4) return true;
+            
+            // Set con vantaggio: 7-5
+            if (games1 === 7 && games2 === 5) return true;
+            if (games2 === 7 && games1 === 5) return true;
+            
+            // Tie-break: 7-6
+            if (games1 === 7 && games2 === 6) return true;
+            if (games2 === 7 && games1 === 6) return true;
+            
+            return false;
+        }
+        
+        // Salva il risultato del match
+        function saveMatch() {
+            console.log('Salvando match:', currentMatchKey);
+            
+            const match = matches[currentMatchKey];
+            if (!match) {
+                alert('Errore: match non trovato');
+                console.error('Match non trovato:', currentMatchKey);
+                return;
+            }
+            
+            const sets = [];
+            let player1SetsWon = 0;
+            let player2SetsWon = 0;
+            
+            // Leggi i risultati dei set
+            for (let i = 1; i <= 3; i++) {
+                const p1Input = document.getElementById(`p1-set${i}`);
+                const p2Input = document.getElementById(`p2-set${i}`);
+                
+                if (!p1Input || !p2Input) {
+                    console.log(`Input non trovati per set ${i}`);
+                    continue;
+                }
+                
+                const p1Games = parseInt(p1Input.value);
+                const p2Games = parseInt(p2Input.value);
+                
+                console.log(`Set ${i}: ${p1Games}-${p2Games}`);
+                
+                if (!isNaN(p1Games) && !isNaN(p2Games) && p1Input.value !== '' && p2Input.value !== '') {
+                    // Validazione del punteggio del set
+                    if (!isValidSetScore(p1Games, p2Games)) {
+                        alert(`Set ${i}: Punteggio non valido. Esempi validi: 6-4, 6-3, 6-2, 6-1, 6-0, 7-5, 7-6.`);
+                        p1Input.focus();
+                        return;
+                    }
+                    
+                    sets.push({
+                        player1Games: p1Games,
+                        player2Games: p2Games
+                    });
+                    
+                    if (p1Games > p2Games) {
+                        player1SetsWon++;
+                    } else {
+                        player2SetsWon++;
+                    }
+                }
+            }
+            
+            console.log(`Set totali: ${sets.length}, P1 vinti: ${player1SetsWon}, P2 vinti: ${player2SetsWon}`);
+            
+            // Verifica che ci sia almeno un set valido
+            if (sets.length === 0) {
+                alert('Inserisci almeno un set valido.');
+                document.getElementById('p1-set1').focus();
+                return;
+            }
+            
+            // Verifica che il match sia concluso (2 set vinti da un giocatore)
+            if (player1SetsWon < 2 && player2SetsWon < 2) {
+                alert('Il match deve essere completato: un giocatore deve vincere almeno 2 set.');
+                return;
+            }
+            
+            // Verifica che non ci siano più di 3 set
+            if (sets.length > 3) {
+                alert('Un match può avere massimo 3 set.');
+                return;
+            }
+            
+            // Salva il match
+            match.sets = sets;
+            match.player1Sets = player1SetsWon;
+            match.player2Sets = player2SetsWon;
+            match.completed = true;
+            
+            console.log('Match salvato:', match);
+            
+            // Aggiorna la visualizzazione
+            updateMatchDisplay(currentMatchKey);
+            calculatePoints();
+            updateRanking();
+            updateStats();
+            
+            // 💾 SALVA AUTOMATICAMENTE
+            saveToLocal();
+            
+            closeModal();
+            
+            console.log('Salvataggio completato');
+        }
+        
+        // Elimina il risultato del match
+        function deleteMatch() {
+            if (confirm('Sei sicuro di voler eliminare questo risultato?')) {
+                const match = matches[currentMatchKey];
+                if (match) {
+                    match.sets = [];
+                    match.player1Sets = 0;
+                    match.player2Sets = 0;
+                    match.completed = false;
+                    
+                    updateMatchDisplay(currentMatchKey);
+                    calculatePoints();
+                    updateRanking();
+                    updateStats();
+                }
+                
+                closeModal();
+            }
+        }
+        
+        // Aggiorna la visualizzazione del match nella tabella
+        function updateMatchDisplay(key) {
+            const match = matches[key];
+            const summaryElement = document.getElementById(`summary-${key}`);
+            
+            if (!summaryElement || !match) return;
+            
+            if (match.completed && match.sets.length > 0) {
+                let setsDisplay = '';
+                match.sets.forEach((set, index) => {
+                    if (index > 0) setsDisplay += ' ';
+                    setsDisplay += `${set.player1Games}-${set.player2Games}`;
+                });
+                
+                const result = `${match.player1Sets}-${match.player2Sets}`;
+                summaryElement.innerHTML = `
+                    <div class="match-result">${result}</div>
+                    <div class="set-details">${setsDisplay}</div>
+                `;
+                summaryElement.parentElement.classList.add('completed-match');
+                summaryElement.parentElement.classList.remove('empty-match');
+            } else {
+                summaryElement.innerHTML = '<div class="empty-match">vs</div>';
+                summaryElement.parentElement.classList.remove('completed-match');
+            }
+        }
+        
+        // Calcola i punti per tutti i giocatori
+        function calculatePoints() {
+            // Reset delle statistiche
+            initializePlayerStats();
+            
+            // Calcola i punti da tutti i match
+            Object.values(matches).forEach(match => {
+                if (match.completed && match.sets.length > 0) {
+                    const player1 = match.player1;
+                    const player2 = match.player2;
+                    const p1Sets = match.player1Sets;
+                    const p2Sets = match.player2Sets;
+                    
+                    // Aggiorna le statistiche base
+                    playerStats[player1].matches++;
+                    playerStats[player2].matches++;
+                    playerStats[player1].setsWon += p1Sets;
+                    playerStats[player1].setsLost += p2Sets;
+                    playerStats[player2].setsWon += p2Sets;
+                    playerStats[player2].setsLost += p1Sets;
+                    
+                    // Calcola i games
+                    let p1Games = 0, p2Games = 0;
+                    match.sets.forEach(set => {
+                        p1Games += set.player1Games;
+                        p2Games += set.player2Games;
+                    });
+                    
+                    playerStats[player1].gamesWon += p1Games;
+                    playerStats[player1].gamesLost += p2Games;
+                    playerStats[player2].gamesWon += p2Games;
+                    playerStats[player2].gamesLost += p1Games;
+                    
+                    // Calcola i punti
+                    if (p1Sets > p2Sets) {
+                        // Player1 vince
+                        playerStats[player1].wins++;
+                        playerStats[player2].losses++;
+                        
+                        if (p1Sets === 2 && p2Sets === 0) {
+                            playerStats[player1].points += 3; // Vittoria 2-0
+                        } else {
+                            playerStats[player1].points += 2; // Vittoria 2-1
+                            playerStats[player2].points += 1; // Sconfitta 2-1
+                        }
+                    } else {
+                        // Player2 vince
+                        playerStats[player2].wins++;
+                        playerStats[player1].losses++;
+                        
+                        if (p2Sets === 2 && p1Sets === 0) {
+                            playerStats[player2].points += 3; // Vittoria 2-0
+                        } else {
+                            playerStats[player2].points += 2; // Vittoria 2-1
+                            playerStats[player1].points += 1; // Sconfitta 2-1
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Aggiorna la classifica
+        function updateRanking() {
+            const tbody = document.getElementById('rankingBody');
+            if (!tbody) return;
+            
+            // Ordina i giocatori per punti, poi per differenza set, poi per differenza games
+            const sortedPlayers = players.slice().sort((a, b) => {
+                const aStats = playerStats[a];
+                const bStats = playerStats[b];
+                
+                // Prima per punti
+                if (bStats.points !== aStats.points) {
+                    return bStats.points - aStats.points;
+                }
+                
+                // Poi per differenza set
+                const aSetDiff = aStats.setsWon - aStats.setsLost;
+                const bSetDiff = bStats.setsWon - bStats.setsLost;
+                if (bSetDiff !== aSetDiff) {
+                    return bSetDiff - aSetDiff;
+                }
+                
+                // Poi per differenza games
+                const aGameDiff = aStats.gamesWon - aStats.gamesLost;
+                const bGameDiff = bStats.gamesWon - bStats.gamesLost;
+                if (bGameDiff !== aGameDiff) {
+                    return bGameDiff - aGameDiff;
+                }
+                
+                // Infine per games vinti
+                return bStats.gamesWon - aStats.gamesWon;
+            });
+            
+            let html = '';
+            sortedPlayers.forEach((player, index) => {
+                const stats = playerStats[player];
+                const setDiff = stats.setsWon - stats.setsLost;
+                const gameDiff = stats.gamesWon - stats.gamesLost;
+                const avgPoints = stats.matches > 0 ? (stats.points / stats.matches).toFixed(2) : '0.00';
+                
+                let rowClass = '';
+                if (index === 0) rowClass = 'first-place';
+                else if (index === 1) rowClass = 'second-place';
+                else if (index === 2) rowClass = 'third-place';
+                
+                const playerName = player.length > 12 ? player.substring(0, 10) + '...' : player;
+                
+                html += `
+                    <tr class="${rowClass}">
+                        <td><strong>${index + 1}</strong></td>
+                        <td title="Giocatore completo: ${player}"><strong>${playerName}</strong></td>
+                        <td><strong>${stats.points}</strong></td>
+                        <td>${stats.matches}</td>
+                        <td>${stats.wins}-${stats.losses}</td>
+                        <td>${stats.setsWon}-${stats.setsLost}</td>
+                        <td>${setDiff > 0 ? '+' : ''}${setDiff}</td>
+                        <td>${stats.gamesWon}-${stats.gamesLost}</td>
+                        <td>${gameDiff > 0 ? '+' : ''}${gameDiff}</td>
+                        <td>${avgPoints}</td>
+                    </tr>
+                `;
+            });
+            
+            tbody.innerHTML = html;
+        }
+        
+        // Aggiorna le statistiche del torneo
+        function updateStats() {
+            const totalMatches = (players.length * (players.length - 1)) / 2;
+            let playedMatches = 0;
+            let totalSets = 0;
+            
+            // Conta solo i match unici (ogni coppia una sola volta)
+            const countedPairs = new Set();
+            
+            Object.values(matches).forEach(match => {
+                if (match.completed) {
+                    const pair1 = `${match.player1}-${match.player2}`;
+                    const pair2 = `${match.player2}-${match.player1}`;
+                    
+                    if (!countedPairs.has(pair1) && !countedPairs.has(pair2)) {
+                        playedMatches++;
+                        totalSets += match.sets.length;
+                        countedPairs.add(pair1);
+                    }
+                }
+            });
+            
+            const completionPercentage = totalMatches > 0 ? Math.round((playedMatches / totalMatches) * 100) : 0;
+            
+            document.getElementById('matchesPlayed').textContent = playedMatches;
+            document.getElementById('totalMatches').textContent = totalMatches;
+            document.getElementById('completionPercentage').textContent = `${completionPercentage}%`;
+            document.getElementById('totalSets').textContent = totalSets;
+        }
+        
+        // Esporta classifica in CSV
+        function exportToCSV() {
+            const sortedPlayers = players.slice().sort((a, b) => {
+                const aStats = playerStats[a];
+                const bStats = playerStats[b];
+                
+                if (bStats.points !== aStats.points) return bStats.points - aStats.points;
+                
+                const aSetDiff = aStats.setsWon - aStats.setsLost;
+                const bSetDiff = bStats.setsWon - bStats.setsLost;
+                if (bSetDiff !== aSetDiff) return bSetDiff - aSetDiff;
+                
+                const aGameDiff = aStats.gamesWon - aStats.gamesLost;
+                const bGameDiff = bStats.gamesWon - bStats.gamesLost;
+                return bGameDiff - aGameDiff;
+            });
+            
+            let csv = 'Posizione,Giocatore,Punti,Partite,Vittorie,Sconfitte,Set Vinti,Set Persi,Diff Set,Games Vinti,Games Persi,Diff Games,Media Punti\n';
+            
+            sortedPlayers.forEach((player, index) => {
+                const stats = playerStats[player];
+                const setDiff = stats.setsWon - stats.setsLost;
+                const gameDiff = stats.gamesWon - stats.gamesLost;
+                const avgPoints = stats.matches > 0 ? (stats.points / stats.matches).toFixed(2) : '0.00';
+                
+                csv += `${index + 1},"${player}",${stats.points},${stats.matches},${stats.wins},${stats.losses},${stats.setsWon},${stats.setsLost},${setDiff},${stats.gamesWon},${stats.gamesLost},${gameDiff},${avgPoints}\n`;
+            });
+            
+            downloadCSV(csv, 'classifica_torneo.csv');
+        }
+        
+        // Esporta risultati base in CSV
+        function exportResultsToCSV() {
+            let csv = 'Giocatore 1,Giocatore 2,Set Giocatore 1,Set Giocatore 2,Vincitore,Punti Giocatore 1,Punti Giocatore 2\n';
+            
+            const processedMatches = new Set();
+            
+            Object.values(matches).forEach(match => {
+                if (match.completed) {
+                    const matchKey = `${match.player1}-${match.player2}`;
+                    const reverseKey = `${match.player2}-${match.player1}`;
+                    
+                    if (!processedMatches.has(matchKey) && !processedMatches.has(reverseKey)) {
+                        const winner = match.player1Sets > match.player2Sets ? match.player1 : match.player2;
+                        
+                        let p1Points = 0, p2Points = 0;
+                        if (match.player1Sets > match.player2Sets) {
+                            p1Points = match.player1Sets === 2 && match.player2Sets === 0 ? 3 : 2;
+                            p2Points = match.player2Sets === 1 ? 1 : 0;
+                        } else {
+                            p2Points = match.player2Sets === 2 && match.player1Sets === 0 ? 3 : 2;
+                            p1Points = match.player1Sets === 1 ? 1 : 0;
+                        }
+                        
+                        csv += `"${match.player1}","${match.player2}",${match.player1Sets},${match.player2Sets},"${winner}",${p1Points},${p2Points}\n`;
+                        processedMatches.add(matchKey);
+                    }
+                }
+            });
+            
+            downloadCSV(csv, 'risultati_torneo.csv');
+        }
+        
+        // Esporta risultati dettagliati in CSV
+        function exportDetailedResults() {
+            let csv = 'Giocatore 1,Giocatore 2,Risultato Set,Set 1,Set 2,Set 3,Vincitore,Punti G1,Punti G2,Games G1,Games G2\n';
+            
+            const processedMatches = new Set();
+            
+            Object.values(matches).forEach(match => {
+                if (match.completed) {
+                    const matchKey = `${match.player1}-${match.player2}`;
+                    const reverseKey = `${match.player2}-${match.player1}`;
+                    
+                    if (!processedMatches.has(matchKey) && !processedMatches.has(reverseKey)) {
+                        const winner = match.player1Sets > match.player2Sets ? match.player1 : match.player2;
+                        const setResult = `${match.player1Sets}-${match.player2Sets}`;
+                        
+                        let p1Points = 0, p2Points = 0;
+                        if (match.player1Sets > match.player2Sets) {
+                            p1Points = match.player1Sets === 2 && match.player2Sets === 0 ? 3 : 2;
+                            p2Points = match.player2Sets === 1 ? 1 : 0;
+                        } else {
+                            p2Points = match.player2Sets === 2 && match.player1Sets === 0 ? 3 : 2;
+                            p1Points = match.player1Sets === 1 ? 1 : 0;
+                        }
+                        
+                        // Prepara i set
+                        const set1 = match.sets[0] ? `${match.sets[0].player1Games}-${match.sets[0].player2Games}` : '';
+                        const set2 = match.sets[1] ? `${match.sets[1].player1Games}-${match.sets[1].player2Games}` : '';
+                        const set3 = match.sets[2] ? `${match.sets[2].player1Games}-${match.sets[2].player2Games}` : '';
+                        
+                        // Calcola totale games
+                        let totalGamesP1 = 0, totalGamesP2 = 0;
+                        match.sets.forEach(set => {
+                            totalGamesP1 += set.player1Games;
+                            totalGamesP2 += set.player2Games;
+                        });
+                        
+                        csv += `"${match.player1}","${match.player2}","${setResult}","${set1}","${set2}","${set3}","${winner}",${p1Points},${p2Points},${totalGamesP1},${totalGamesP2}\n`;
+                        processedMatches.add(matchKey);
+                    }
+                }
+            });
+            
+            downloadCSV(csv, 'risultati_dettagliati_torneo.csv');
+        }
+        
+        // Download CSV
+        function downloadCSV(content, filename) {
+            try {
+                const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                const url = URL.createObjectURL(blob);
+                link.setAttribute('href', url);
+                link.setAttribute('download', filename);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            } catch (error) {
+                console.error('Errore nel download del CSV:', error);
+                alert('Errore durante il download del file CSV');
+            }
+        }
+        
+        // Reset del torneo
+        function resetTournament() {
+            if (confirm('⚠️ Sei sicuro di voler resettare tutto il torneo?\n\nTutti i risultati inseriti andranno persi definitivamente.')) {
+                try {
+                    initializePlayerStats();
+                    initializeMatches();
+                    
+                    // Reset della visualizzazione
+                    Object.keys(matches).forEach(key => {
+                        updateMatchDisplay(key);
+                    });
+                    
+                    updateRanking();
+                    updateStats();
+                    
+                    alert('✅ Torneo resettato con successo!');
+                } catch (error) {
+                    console.error('Errore durante il reset:', error);
+                    alert('❌ Errore durante il reset del torneo');
+                }
+            }
+        }
+        
+        // Gestione della tastiera nel modal
+        function handleKeyPress(event) {
+            if (event.key === 'Escape') {
+                closeModal();
+            } else if (event.key === 'Enter') {
+                const activeElement = document.activeElement;
+                if (activeElement && activeElement.classList.contains('set-input')) {
+                    // Passa al prossimo input
+                    const inputs = document.querySelectorAll('.set-input');
+                    const currentIndex = Array.from(inputs).indexOf(activeElement);
+                    if (currentIndex < inputs.length - 1) {
+                        inputs[currentIndex + 1].focus();
+                    } else {
+                        saveMatch();
+                    }
+                }
+            }
+        }
+        
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            try {
+                console.log('Inizializzazione applicazione...');
+                
+                initializePlayerStats();
+                initializeMatches();
+                createResultsTable();
+                updateRanking();
+                updateStats();
+                
+                console.log('Applicazione inizializzata con successo');
+                console.log('Giocatori:', players);
+                console.log('Match creati:', Object.keys(matches).length);
+                
+                // Chiudi modal quando si clicca sulla X
+                const closeBtn = document.querySelector('.close');
+                if (closeBtn) {
+                    closeBtn.addEventListener('click', closeModal);
+                    console.log('Event listener per chiusura modal aggiunto');
+                }
+                
+                // Chiudi modal quando si clicca fuori
+                window.addEventListener('click', function(event) {
+                    const modal = document.getElementById('matchModal');
+                    if (event.target === modal) {
+                        closeModal();
+                    }
+                });
+                
+                // Gestione tastiera
+                document.addEventListener('keydown', handleKeyPress);
+                
+                // Prevenzione dell'invio accidentale del form
+                document.addEventListener('keydown', function(event) {
+                    if (event.key === 'Enter' && event.target.tagName !== 'BUTTON') {
+                        event.preventDefault();
+                    }
+                });
+                
+                // Test delle celle cliccabili
+                setTimeout(() => {
+                    const testCell = document.querySelector('.match-cell');
+                    if (testCell) {
+                        console.log('Prima cella trovata:', testCell);
+                    } else {
+                        console.error('Nessuna cella match trovata!');
+                    }
+                }, 500);
+                
+            } catch (error) {
+                console.error('Errore durante l\'inizializzazione:', error);
+                alert('Errore durante l\'inizializzazione dell\'applicazione: ' + error.message);
+            }
+        });
+    </script>
+</body>
+</html>
