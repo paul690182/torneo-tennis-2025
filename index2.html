@@ -1,4 +1,11 @@
-// Event listeners - VERSIONE CORRETTA
+// 💾 COMPATIBILITÀ CON VECCHIE FUNZIONI
+        function saveToLocal() {
+            autoSave();
+        }
+        
+        function loadFromLocal() {
+            loadAutoSave();
+        }        // Event listeners - VERSIONE CORRETTA
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🚀 Inizializzazione DOM completata');
             
@@ -909,6 +916,20 @@
                 <li><strong>0 punti</strong> - Sconfitta 2-0 (set)</li>
             </ul>
             <p><em>💡 Clicca su una cella della tabella risultati per inserire il punteggio dettagliato di ogni set.</em></p>
+            
+            <!-- ISTRUZIONI SALVATAGGIO -->
+            <div style="background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 20px; border-radius: 12px; margin-top: 20px;">
+                <h4 style="margin: 0 0 15px 0;">💾 IMPORTANTE - Come non perdere i dati:</h4>
+                <ul style="margin: 0; padding-left: 20px;">
+                    <li><strong>AUTOMATICO:</strong> I dati si salvano automaticamente ad ogni inserimento</li>
+                    <li><strong>BACKUP:</strong> Clicca "📤 Esporta JSON" ogni tanto per sicurezza</li>
+                    <li><strong>RIPRISTINO:</strong> Se perdi i dati, usa "📥 Importa JSON" con il file salvato</li>
+                    <li><strong>STESSO BROWSER:</strong> Usa sempre lo stesso browser/dispositivo</li>
+                </ul>
+                <p style="margin: 15px 0 0 0; font-style: italic; opacity: 0.9;">
+                    ⚠️ I dati sono salvati nel browser. Per un sito completamente dinamico, vedi le opzioni sotto.
+                </p>
+            </div>
         </div>
         
         <div class="stats" id="tournamentStats">
@@ -1007,36 +1028,104 @@
             }
         }
         
-        // 💾 SISTEMA SALVATAGGIO SEMPLIFICATO
-        function saveToLocal() {
+        // 💾 SISTEMA SALVATAGGIO AUTOMATICO AVANZATO
+        let autoSaveEnabled = true;
+        let backupCounter = 0;
+        
+        function autoSave() {
+            if (!autoSaveEnabled) return;
+            
             try {
                 const tournamentData = {
                     matches: matches,
                     playerStats: playerStats,
-                    version: '2.0'
+                    players: players,
+                    timestamp: new Date().toISOString(),
+                    version: '2.1-auto'
                 };
                 
-                // Usa variabili globali invece del localStorage per evitare problemi
-                window.savedTournament = tournamentData;
-                console.log('✅ Dati salvati in memoria');
+                // Salvataggio principale
+                window.tournamentData = tournamentData;
+                
+                // Backup multipli (fino a 5)
+                const backupKey = `backup_${backupCounter % 5}`;
+                window[backupKey] = tournamentData;
+                backupCounter++;
+                
+                // Update status indicator
+                updateSaveStatus('✅ Salvato automaticamente');
+                
+                console.log('💾 Auto-save completato');
                 
             } catch (error) {
-                console.error('❌ Errore salvataggio:', error);
+                console.error('❌ Errore auto-save:', error);
+                updateSaveStatus('⚠️ Errore salvataggio');
             }
         }
         
-        // 📥 CARICA DATI SEMPLIFICATO
-        function loadFromLocal() {
+        function updateSaveStatus(message) {
+            let statusDiv = document.getElementById('saveStatus');
+            if (!statusDiv) {
+                statusDiv = document.createElement('div');
+                statusDiv.id = 'saveStatus';
+                statusDiv.style.cssText = `
+                    position: fixed; 
+                    top: 20px; 
+                    right: 20px; 
+                    background: rgba(16, 185, 129, 0.9); 
+                    color: white; 
+                    padding: 12px 20px; 
+                    border-radius: 8px; 
+                    font-weight: 600;
+                    z-index: 1000;
+                    transition: all 0.3s ease;
+                `;
+                document.body.appendChild(statusDiv);
+            }
+            
+            statusDiv.textContent = message;
+            statusDiv.style.opacity = '1';
+            
+            // Hide after 3 seconds
+            setTimeout(() => {
+                statusDiv.style.opacity = '0';
+            }, 3000);
+        }
+        
+        function loadAutoSave() {
             try {
-                if (window.savedTournament) {
-                    matches = window.savedTournament.matches || matches;
-                    playerStats = window.savedTournament.playerStats || playerStats;
+                // Carica dal salvataggio principale
+                if (window.tournamentData) {
+                    const data = window.tournamentData;
+                    matches = data.matches || matches;
+                    playerStats = data.playerStats || playerStats;
                     
                     updateAllDisplays();
-                    console.log('✅ Dati caricati da memoria');
+                    updateSaveStatus('📥 Dati ripristinati');
+                    console.log('✅ Auto-load completato');
+                    return true;
                 }
+                
+                // Prova con i backup
+                for (let i = 0; i < 5; i++) {
+                    const backupData = window[`backup_${i}`];
+                    if (backupData) {
+                        matches = backupData.matches || matches;
+                        playerStats = backupData.playerStats || playerStats;
+                        
+                        updateAllDisplays();
+                        updateSaveStatus('📥 Backup ripristinato');
+                        console.log(`✅ Backup ${i} caricato`);
+                        return true;
+                    }
+                }
+                
+                console.log('ℹ️ Nessun salvataggio trovato');
+                return false;
+                
             } catch (error) {
-                console.error('❌ Errore caricamento:', error);
+                console.error('❌ Errore auto-load:', error);
+                return false;
             }
         }
         
@@ -1478,6 +1567,7 @@
                     calculatePoints();
                     updateRanking();
                     updateStats();
+                    autoSave(); // Salvataggio automatico dopo eliminazione
                 }
                 
                 closeModal();
@@ -1809,8 +1899,9 @@
                     
                     updateRanking();
                     updateStats();
+                    autoSave(); // Salvataggio automatico dopo reset
                     
-                    alert('✅ Torneo resettato con successo!');
+                    updateSaveStatus('🔄 Torneo resettato');
                 } catch (error) {
                     console.error('Errore durante il reset:', error);
                     alert('❌ Errore durante il reset del torneo');
@@ -1847,6 +1938,11 @@
                 createResultsTable();
                 updateRanking();
                 updateStats();
+                
+                // Carica automaticamente i dati salvati
+                setTimeout(() => {
+                    loadAutoSave();
+                }, 500);
                 
                 console.log('✅ Applicazione inizializzata con successo');
                 console.log('👥 Giocatori:', players);
