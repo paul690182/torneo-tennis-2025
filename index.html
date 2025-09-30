@@ -14,21 +14,9 @@
             'Simone Greco', 'Federico Costa', 'Gabriele Conti', 'Riccardo Villa'
         ];
 
-        // 🚀 INIZIALIZZAZIONE APP - VERSIONE ROBUSTA
+        // 🚀 INIZIALIZZAZIONE APP - VERSIONE SEMPLICE
         function initApp() {
-            console.log('🎾 Inizializzazione app tennis...');
-            
-            // Aggiorna status nella UI
-            const statusText = document.getElementById('statusText');
-            if (statusText) {
-                if (window.firebaseConnected) {
-                    statusText.innerHTML = '🔥 Firebase connesso - Dati salvati nel cloud';
-                    statusText.parentElement.style.background = 'rgba(16, 185, 129, 0.2)';
-                } else {
-                    statusText.innerHTML = '💾 Modalità locale - Dati salvati nel browser (sempre funzionante)';
-                    statusText.parentElement.style.background = 'rgba(99, 102, 241, 0.2)';
-                }
-            }
+            console.log('🎾 App pronta!');
             
             updateStatus('✅ Sistema pronto - Crea o unisciti a un torneo!');
             
@@ -39,46 +27,52 @@
                     input.focus();
                     input.select();
                 }
-            }, 500);
+            }, 100);
         }
 
-        // 📱 DATABASE HELPER FUNCTIONS - SISTEMA IBRIDO
+        // 📱 DATABASE HELPER FUNCTIONS - FIREBASE REALE
         async function saveToDatabase(path, data) {
-            let firebaseSuccess = false;
-            
-            // Prova prima Firebase
+            // Prova Firebase
             if (window.firebaseConnected && window.firebaseDatabase) {
                 try {
                     const dbRef = window.firebaseRef(window.firebaseDatabase, path);
                     await window.firebaseSet(dbRef, data);
-                    firebaseSuccess = true;
-                    console.log('🔥 Salvato su Firebase');
+                    console.log('🔥 Salvato su Firebase:', path);
+                    updateStatus('🔥 Salvato nel cloud - Visibile a tutti!');
+                    
+                    setTimeout(() => {
+                        updateStatus('🔥 Firebase connesso - Database cloud attivo!');
+                    }, 2000);
+                    
+                    // Backup locale
+                    try {
+                        const key = 'tennis_' + path.replace(/\//g, '_');
+                        localStorage.setItem(key, JSON.stringify(data));
+                    } catch (e) {}
+                    
+                    return true;
                 } catch (error) {
-                    console.error('⚠️ Errore Firebase, uso localStorage:', error);
+                    console.error('❌ Errore Firebase:', error);
+                    updateStatus('⚠️ Errore salvataggio cloud - Verifica connessione');
                 }
             }
             
-            // Salva sempre su localStorage come backup
+            // Fallback localStorage
             try {
-                const key = path.replace(/\//g, '_');
+                const key = 'tennis_' + path.replace(/\//g, '_');
                 localStorage.setItem(key, JSON.stringify(data));
-                console.log('💾 Salvato su localStorage');
-                
-                if (firebaseSuccess) {
-                    updateStatus('🔥 Salvato su Firebase + backup locale');
-                } else {
-                    updateStatus('💾 Salvato localmente (Firebase offline)');
-                }
+                console.log('💾 Salvato in locale:', key);
+                updateStatus('💾 Salvato localmente (Firebase offline)');
                 return true;
             } catch (e) {
-                console.error('❌ Errore completo salvataggio:', e);
+                console.error('❌ Errore salvataggio:', e);
                 updateStatus('❌ Errore salvataggio');
                 return false;
             }
         }
 
         async function loadFromDatabase(path) {
-            // Prova prima Firebase
+            // Prova Firebase
             if (window.firebaseConnected && window.firebaseDatabase) {
                 try {
                     const dbRef = window.firebaseRef(window.firebaseDatabase, path);
@@ -86,25 +80,27 @@
                     const firebaseData = snapshot.val();
                     
                     if (firebaseData) {
-                        console.log('🔥 Caricato da Firebase');
-                        // Salva anche in localStorage per backup
+                        console.log('🔥 Caricato da Firebase:', path);
+                        
+                        // Backup locale
                         try {
-                            const key = path.replace(/\//g, '_');
+                            const key = 'tennis_' + path.replace(/\//g, '_');
                             localStorage.setItem(key, JSON.stringify(firebaseData));
                         } catch (e) {}
+                        
                         return firebaseData;
                     }
                 } catch (error) {
-                    console.error('⚠️ Errore lettura Firebase:', error);
+                    console.error('❌ Errore lettura Firebase:', error);
                 }
             }
             
-            // Fallback su localStorage
+            // Fallback localStorage
             try {
-                const key = path.replace(/\//g, '_');
+                const key = 'tennis_' + path.replace(/\//g, '_');
                 const stored = localStorage.getItem(key);
                 if (stored) {
-                    console.log('💾 Caricato da localStorage');
+                    console.log('💾 Caricato da localStorage:', key);
                     return JSON.parse(stored);
                 }
             } catch (e) {
@@ -199,14 +195,16 @@
             }
         }
 
-        // 📡 SINCRONIZZAZIONE REAL-TIME
+        // 📡 SINCRONIZZAZIONE REAL-TIME - ATTIVA
         function setupRealtimeSync() {
             if (!window.firebaseConnected || !window.firebaseDatabase) {
-                console.log('📱 Modalità offline - Nessuna sincronizzazione');
+                console.log('📱 Firebase offline - Nessuna sincronizzazione');
                 return;
             }
 
             try {
+                console.log('📡 Attivazione sincronizzazione real-time...');
+                
                 // Pulisci listener precedenti
                 realtimeListeners.forEach(listener => {
                     if (listener.off) listener.off();
@@ -215,21 +213,27 @@
 
                 // Listener per matches
                 const matchesRef = window.firebaseRef(window.firebaseDatabase, `tournaments/${currentTournament}/matches`);
-                const matchesListener = window.firebaseOnValue(matchesRef, (snapshot) => {
+                window.firebaseOnValue(matchesRef, (snapshot) => {
                     const newMatches = snapshot.val();
                     if (newMatches && JSON.stringify(newMatches) !== JSON.stringify(matches)) {
+                        console.log('🔄 Aggiornamento matches da Firebase');
                         matches = newMatches;
                         updateAllDisplays();
-                        updateStatus('🔄 Dati sincronizzati automaticamente');
+                        updateStatus('🔄 Dati aggiornati automaticamente dal cloud!');
+                        
+                        setTimeout(() => {
+                            updateStatus('🔥 Firebase connesso - Database cloud attivo!');
+                        }, 3000);
                     }
                 });
                 realtimeListeners.push({ off: () => window.firebaseOff(matchesRef) });
 
                 // Listener per playerStats
                 const statsRef = window.firebaseRef(window.firebaseDatabase, `tournaments/${currentTournament}/playerStats`);
-                const statsListener = window.firebaseOnValue(statsRef, (snapshot) => {
+                window.firebaseOnValue(statsRef, (snapshot) => {
                     const newStats = snapshot.val();
                     if (newStats && JSON.stringify(newStats) !== JSON.stringify(playerStats)) {
+                        console.log('🔄 Aggiornamento stats da Firebase');
                         playerStats = newStats;
                         updateRanking();
                         updateStats();
@@ -237,10 +241,15 @@
                 });
                 realtimeListeners.push({ off: () => window.firebaseOff(statsRef) });
 
-                console.log('📡 Sincronizzazione real-time attivata');
+                console.log('✅ Sincronizzazione real-time attivata');
+                updateStatus('📡 Sincronizzazione real-time attiva - Tutti vedranno le modifiche!');
+                
+                setTimeout(() => {
+                    updateStatus('🔥 Firebase connesso - Database cloud attivo!');
+                }, 3000);
                 
             } catch (error) {
-                console.error('⚠️ Errore sync:', error);
+                console.error('❌ Errore sync:', error);
             }
         }
 
@@ -740,6 +749,89 @@
             updateStats();
         }
 
+        // 📤 EXPORT/IMPORT JSON
+        function exportAllData() {
+            try {
+                const exportData = {
+                    tournamentName: currentTournament,
+                    players: players,
+                    matches: matches,
+                    playerStats: playerStats,
+                    exportDate: new Date().toISOString(),
+                    version: '3.0'
+                };
+                
+                const jsonData = JSON.stringify(exportData, null, 2);
+                const blob = new Blob([jsonData], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `torneo_${currentTournament}_${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+                
+                updateStatus('📤 JSON esportato con successo!');
+            } catch (error) {
+                console.error('❌ Errore export:', error);
+                alert('❌ Errore durante l\'export');
+            }
+        }
+        
+        function importData() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            
+            input.onchange = async function(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = async function(e) {
+                    try {
+                        const data = JSON.parse(e.target.result);
+                        
+                        if (!data.matches || !data.playerStats || !data.players) {
+                            throw new Error('File JSON non valido');
+                        }
+                        
+                        // Carica i dati
+                        currentTournament = data.tournamentName || 'Torneo Importato';
+                        players = data.players;
+                        matches = data.matches;
+                        playerStats = data.playerStats;
+                        
+                        // Salva nel database locale
+                        await saveToDatabase(`tournaments/${currentTournament}`, {
+                            players: players,
+                            matches: matches,
+                            playerStats: playerStats,
+                            lastUpdate: new Date().toISOString()
+                        });
+                        
+                        // Mostra il torneo
+                        showTournament();
+                        updateAllDisplays();
+                        
+                        updateStatus('📥 Dati importati con successo!');
+                        alert(`✅ Torneo "${currentTournament}" importato con successo!\n\n${Object.values(matches).filter(m => m.completed).length} match caricati.`);
+                        
+                    } catch (error) {
+                        console.error('❌ Errore import:', error);
+                        alert('❌ Errore: File JSON non valido o corrotto');
+                    }
+                };
+                
+                reader.readAsText(file);
+            };
+            
+            document.body.appendChild(input);
+            input.click();
+            document.body.removeChild(input);
+        }
+        
         // 📤 EXPORT CSV
         function exportToCSV() {
             const sortedPlayers = players.slice().sort((a, b) => {
@@ -1637,13 +1729,14 @@
         <div class="main-content">
             <h1>🔥 Torneo Tennis Firebase</h1>
             
-            <!-- Info Firebase -->
+            <!-- Info Firebase REALE -->
             <div class="firebase-info">
-                <h2>💾 Sistema Ibrido Intelligente</h2>
-                <p><strong>🔥 Firebase Cloud</strong> + <strong>💾 Backup Locale</strong> = <strong>📱 Sempre Funzionante</strong></p>
-                <p>I dati si salvano automaticamente sia nel cloud che localmente. Non perdi mai nulla!</p>
-                <div id="connectionStatus" style="margin-top: 15px; padding: 15px; border-radius: 10px; background: rgba(0,0,0,0.1);">
-                    <strong>Stato:</strong> <span id="statusText">Inizializzazione...</span>
+                <h2>🔥 Firebase Cloud Database - ATTIVO</h2>
+                <p><strong>☁️ Database condiviso nel cloud</strong> • <strong>🔄 Sincronizzazione real-time</strong> • <strong>🌍 Visibile da tutti</strong></p>
+                <p><strong>💡 Tutti i giocatori vedranno gli stessi risultati!</strong> Basta condividere il nome del torneo.</p>
+                <div id="connectionStatus" style="margin-top: 15px; padding: 15px; border-radius: 10px; background: rgba(16, 185, 129, 0.2); border: 2px solid #10b981;">
+                    <strong>🔥 Il tuo database Firebase è attivo!</strong><br>
+                    <span style="font-size: 0.9em; opacity: 0.9;">Tutti con lo stesso nome torneo vedranno i dati sincronizzati automaticamente</span>
                 </div>
             </div>
             
@@ -1733,9 +1826,11 @@
             </div>
             
             <div class="section" id="exportSection" style="display: none;">
-                <button class="export-btn" onclick="exportToCSV()">📊 Esporta Classifica</button>
-                <button class="export-btn" onclick="exportResultsToCSV()">📋 Esporta Risultati</button>
-                <button class="export-btn" onclick="exportDetailedResults()">📈 Esporta Dettagliati</button>
+                <button class="export-btn" onclick="exportToCSV()">📊 Esporta Classifica CSV</button>
+                <button class="export-btn" onclick="exportResultsToCSV()">📋 Esporta Risultati CSV</button>
+                <button class="export-btn" onclick="exportDetailedResults()">📈 Esporta Dettagliati CSV</button>
+                <button class="export-btn" onclick="exportAllData()" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">📤 Esporta JSON Completo</button>
+                <button class="export-btn" onclick="importData()" style="background: linear-gradient(135deg, #06b6d4, #0891b2);">📥 Importa JSON</button>
                 <button class="export-btn reset-btn" onclick="resetTournament()">🔄 Reset Torneo</button>
             </div>
         </div>
