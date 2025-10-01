@@ -1,4 +1,23 @@
 <script>
+        // ⚡ DEFINISCI updateStatus GLOBALMENTE PRIMA DI TUTTO
+        function updateStatus(message) {
+            console.log('📢', message);
+            const statusBar = document.getElementById('statusBar');
+            if (statusBar) {
+                statusBar.innerHTML = message;
+                if (message.includes('🔥') || message.includes('✅')) {
+                    statusBar.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+                } else if (message.includes('⚠️')) {
+                    statusBar.style.background = 'linear-gradient(135deg, #f59e0b, #d97706)';
+                } else {
+                    statusBar.style.background = 'linear-gradient(135deg, #6366f1, #4f46e5)';
+                }
+            }
+        }
+        
+        // Rendi disponibile subito
+        window.updateStatus = updateStatus;
+        
         // 🎯 VARIABILI GLOBALI
         let currentTournament = '';
         let players = [];
