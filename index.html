@@ -14,10 +14,9 @@
             'Simone Greco', 'Federico Costa', 'Gabriele Conti', 'Riccardo Villa'
         ];
 
-        // 🚀 INIZIALIZZAZIONE APP - VERSIONE SEMPLICE
+        // 🚀 INIZIALIZZAZIONE APP - VERSIONE CORRETTA
         function initApp() {
-            console.log('🎾 App pronta!');
-            
+            console.log('🎾 App inizializzata!');
             updateStatus('✅ Sistema pronto - Crea o unisciti a un torneo!');
             
             // Auto-focus su input torneo
@@ -26,9 +25,15 @@
                 if (input) {
                     input.focus();
                     input.select();
+                    console.log('✅ Input pronto');
                 }
-            }, 100);
+            }, 200);
+            
+            console.log('✅ Sistema completamente funzionante!');
         }
+        
+        // Rendi initApp disponibile globalmente
+        window.initApp = initApp;
 
         // 📱 DATABASE HELPER FUNCTIONS - FIREBASE REALE
         async function saveToDatabase(path, data) {
@@ -980,18 +985,30 @@
 
         // 🎮 EVENT LISTENERS
         document.addEventListener('DOMContentLoaded', function() {
-            // Avvia l'app
-            if (window.firebaseReady) {
-                initApp();
-            } else {
-                // Aspetta che Firebase sia pronto
-                const checkFirebase = setInterval(() => {
-                    if (window.firebaseReady) {
-                        clearInterval(checkFirebase);
-                        initApp();
+            console.log('📄 DOM caricato');
+            
+            // Aspetta che Firebase sia pronto
+            const waitForFirebase = setInterval(() => {
+                if (window.firebaseReady) {
+                    clearInterval(waitForFirebase);
+                    console.log('✅ Firebase pronto, avvio app...');
+                    
+                    if (window.initApp) {
+                        window.initApp();
+                    } else {
+                        console.error('❌ initApp non trovata!');
                     }
-                }, 100);
-            }
+                }
+            }, 100);
+            
+            // Timeout di sicurezza
+            setTimeout(() => {
+                clearInterval(waitForFirebase);
+                if (!window.appStarted && window.initApp) {
+                    console.log('⏰ Avvio forzato app');
+                    window.initApp();
+                }
+            }, 3000);
             
             // Event listeners modal
             const closeBtn = document.querySelector('.close');
@@ -1028,15 +1045,33 @@
             });
 
             // Enter su input nome torneo
-            document.getElementById('tournamentName').addEventListener('keydown', function(event) {
-                if (event.key === 'Enter') {
-                    joinTournament();
-                }
-            });
+            const tournamentInput = document.getElementById('tournamentName');
+            if (tournamentInput) {
+                tournamentInput.addEventListener('keydown', function(event) {
+                    if (event.key === 'Enter') {
+                        joinTournament();
+                    }
+                });
+                console.log('✅ Event listener input torneo aggiunto');
+            }
+            
+            console.log('✅ Event listeners configurati');
         });
 
-        // Rende funzioni disponibili globalmente
-        window.initApp = initApp;
+        // Rende funzioni disponibili globalmente per onclick
+        window.createTournament = createTournament;
+        window.joinTournament = joinTournament;
+        window.leaveTournament = leaveTournament;
+        window.openMatchModal = openMatchModal;
+        window.closeModal = closeModal;
+        window.saveMatch = saveMatch;
+        window.deleteMatch = deleteMatch;
+        window.exportToCSV = exportToCSV;
+        window.exportResultsToCSV = exportResultsToCSV;
+        window.exportDetailedResults = exportDetailedResults;
+        window.exportAllData = exportAllData;
+        window.importData = importData;
+        window.resetTournament = resetTournament;
     </script>
 </body>
 </html><!DOCTYPE html>
