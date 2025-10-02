@@ -235,38 +235,49 @@
                 });
                 realtimeListeners = [];
 
-                // Listener per matches
+                // ⚡ LISTENER MATCHES - Si aggiorna automaticamente
                 const matchesRef = window.firebaseRef(window.firebaseDatabase, `tournaments/${currentTournament}/matches`);
-                window.firebaseOnValue(matchesRef, (snapshot) => {
+                const matchesUnsubscribe = window.firebaseOnValue(matchesRef, (snapshot) => {
                     const newMatches = snapshot.val();
-                    if (newMatches && JSON.stringify(newMatches) !== JSON.stringify(matches)) {
-                        console.log('🔄 Aggiornamento matches da Firebase');
-                        matches = newMatches;
-                        updateAllDisplays();
-                        updateStatus('🔄 Dati aggiornati automaticamente dal cloud!');
+                    if (newMatches) {
+                        const newMatchesStr = JSON.stringify(newMatches);
+                        const currentMatchesStr = JSON.stringify(matches);
                         
-                        setTimeout(() => {
-                            updateStatus('🔥 Firebase connesso - Database cloud attivo!');
-                        }, 3000);
+                        if (newMatchesStr !== currentMatchesStr) {
+                            console.log('🔄 Aggiornamento matches da Firebase');
+                            matches = newMatches;
+                            updateAllDisplays();
+                            updateStatus('🔄 Dati aggiornati da altro giocatore!');
+                            
+                            setTimeout(() => {
+                                updateStatus('🔥 Firebase connesso - Sincronizzato!');
+                            }, 3000);
+                        }
                     }
                 });
-                realtimeListeners.push({ off: () => window.firebaseOff(matchesRef) });
+                realtimeListeners.push({ off: matchesUnsubscribe });
 
-                // Listener per playerStats
+                // ⚡ LISTENER STATS - Classifica si aggiorna automaticamente  
                 const statsRef = window.firebaseRef(window.firebaseDatabase, `tournaments/${currentTournament}/playerStats`);
-                window.firebaseOnValue(statsRef, (snapshot) => {
+                const statsUnsubscribe = window.firebaseOnValue(statsRef, (snapshot) => {
                     const newStats = snapshot.val();
-                    if (newStats && JSON.stringify(newStats) !== JSON.stringify(playerStats)) {
-                        console.log('🔄 Aggiornamento stats da Firebase');
-                        playerStats = newStats;
-                        updateRanking();
-                        updateStats();
+                    if (newStats) {
+                        const newStatsStr = JSON.stringify(newStats);
+                        const currentStatsStr = JSON.stringify(playerStats);
+                        
+                        if (newStatsStr !== currentStatsStr) {
+                            console.log('🔄 Aggiornamento stats da Firebase');
+                            playerStats = newStats;
+                            updateRanking();
+                            updateStats();
+                        }
                     }
                 });
-                realtimeListeners.push({ off: () => window.firebaseOff(statsRef) });
+                realtimeListeners.push({ off: statsUnsubscribe });
 
-                console.log('✅ Sincronizzazione real-time attivata');
-                updateStatus('📡 Sincronizzazione real-time attiva - Tutti vedranno le modifiche!');
+                console.log('✅ Sincronizzazione real-time ATTIVA');
+                console.log('👥 Tutti i giocatori vedranno gli aggiornamenti in tempo reale!');
+                updateStatus('📡 Sincronizzazione attiva - Tutti vedono le modifiche!');
                 
                 setTimeout(() => {
                     updateStatus('🔥 Firebase connesso - Database cloud attivo!');
@@ -971,6 +982,49 @@
             }
         }
         
+        // 📋 COPIA LINK
+        function copyLink() {
+            const link = 'https://paul690182.github.io/torneo-tennis-2025/';
+            
+            // Prova con Clipboard API
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(link)
+                    .then(() => {
+                        updateStatus('📋 Link copiato! Invialo agli altri giocatori');
+                        alert('✅ Link copiato negli appunti!\n\nInvialo agli altri giocatori via WhatsApp, Email, ecc.');
+                        setTimeout(() => {
+                            updateStatus('🔥 Firebase connesso - Database cloud attivo!');
+                        }, 3000);
+                    })
+                    .catch(err => {
+                        // Fallback
+                        fallbackCopy(link);
+                    });
+            } else {
+                // Fallback per browser vecchi
+                fallbackCopy(link);
+            }
+        }
+        
+        function fallbackCopy(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            
+            try {
+                document.execCommand('copy');
+                updateStatus('📋 Link copiato! Invialo agli altri giocatori');
+                alert('✅ Link copiato negli appunti!\n\nInvialo agli altri giocatori.');
+            } catch (err) {
+                alert('📋 Copia questo link e invialo agli altri:\n\n' + text);
+            }
+            
+            document.body.removeChild(textarea);
+        }
+        
         // 🔄 RESET TORNEO
         async function resetTournament() {
             if (confirm('⚠️ Sei sicuro di voler resettare tutto il torneo?\n\nTutti i risultati andranno persi definitivamente.')) {
@@ -1081,6 +1135,7 @@
         window.createTournament = createTournament;
         window.joinTournament = joinTournament;
         window.leaveTournament = leaveTournament;
+        window.copyLink = copyLink;
         window.openMatchModal = openMatchModal;
         window.closeModal = closeModal;
         window.saveMatch = saveMatch;
@@ -1810,8 +1865,15 @@
             <!-- Torneo attivo -->
             <div class="tournament-active" id="tournamentActive" style="display: none;">
                 <h3>🏆 Torneo Attivo: <span id="activeTournamentName"></span></h3>
-                <p>📡 Database Firebase sincronizzato • ☁️ Dati permanenti • 
+                <p>📡 Sincronizzazione Firebase attiva • ☁️ Database condiviso • 👥 Tutti vedono le modifiche in tempo reale<br>
                 <button onclick="leaveTournament()">🔄 Cambia Torneo</button></p>
+                <div style="margin-top: 15px; padding: 12px; background: rgba(16, 185, 129, 0.3); border-radius: 8px; font-size: 0.9em;">
+                    <strong>🌐 Condividi questo link con gli altri:</strong><br>
+                    <code style="background: rgba(0,0,0,0.3); padding: 8px 12px; border-radius: 6px; display: inline-block; margin-top: 8px; cursor: pointer;" onclick="copyLink()" title="Clicca per copiare">
+                        https://paul690182.github.io/torneo-tennis-2025/
+                    </code>
+                    <button onclick="copyLink()" style="margin-left: 10px; padding: 8px 16px; background: rgba(255,255,255,0.9); border: none; border-radius: 6px; cursor: pointer; font-weight: 600; color: #059669;">📋 Copia Link</button>
+                </div>
             </div>
             
             <div class="points-legend" id="gameContent" style="display: none;">
