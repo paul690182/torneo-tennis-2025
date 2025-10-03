@@ -221,7 +221,7 @@
             }
         }
 
-        // 📡 SINCRONIZZAZIONE REAL-TIME - ATTIVA
+        // 📡 SINCRONIZZAZIONE REAL-TIME - FIREBASE v8
         function setupRealtimeSync() {
             if (!window.firebaseConnected || !window.firebaseDatabase) {
                 console.log('📱 Firebase offline - Nessuna sincronizzazione');
@@ -237,9 +237,9 @@
                 });
                 realtimeListeners = [];
 
-                // ⚡ LISTENER MATCHES - Si aggiorna automaticamente
-                const matchesRef = window.firebaseRef(window.firebaseDatabase, `tournaments/${currentTournament}/matches`);
-                const matchesUnsubscribe = window.firebaseOnValue(matchesRef, (snapshot) => {
+                // ⚡ LISTENER MATCHES
+                const matchesRef = window.firebaseDatabase.ref(`tournaments/${currentTournament}/matches`);
+                matchesRef.on('value', (snapshot) => {
                     const newMatches = snapshot.val();
                     if (newMatches) {
                         const newMatchesStr = JSON.stringify(newMatches);
@@ -257,11 +257,11 @@
                         }
                     }
                 });
-                realtimeListeners.push({ off: matchesUnsubscribe });
+                realtimeListeners.push({ off: () => matchesRef.off() });
 
-                // ⚡ LISTENER STATS - Classifica si aggiorna automaticamente  
-                const statsRef = window.firebaseRef(window.firebaseDatabase, `tournaments/${currentTournament}/playerStats`);
-                const statsUnsubscribe = window.firebaseOnValue(statsRef, (snapshot) => {
+                // ⚡ LISTENER STATS
+                const statsRef = window.firebaseDatabase.ref(`tournaments/${currentTournament}/playerStats`);
+                statsRef.on('value', (snapshot) => {
                     const newStats = snapshot.val();
                     if (newStats) {
                         const newStatsStr = JSON.stringify(newStats);
@@ -275,7 +275,7 @@
                         }
                     }
                 });
-                realtimeListeners.push({ off: statsUnsubscribe });
+                realtimeListeners.push({ off: () => statsRef.off() });
 
                 console.log('✅ Sincronizzazione real-time ATTIVA');
                 console.log('👥 Tutti i giocatori vedranno gli aggiornamenti in tempo reale!');
