@@ -1,4 +1,45 @@
 <script>
+        console.log('🚀 INIZIO CARICAMENTO SISTEMA');
+        console.log('📍 Step 1: Script principale avviato');
+        
+        // Test se Firebase è disponibile
+        window.addEventListener('load', function() {
+            console.log('📍 Step 2: Pagina caricata completamente');
+            
+            setTimeout(function() {
+                console.log('📍 Step 3: Verifica Firebase...');
+                
+                if (typeof firebase !== 'undefined') {
+                    console.log('✅ Firebase SDK TROVATO');
+                } else {
+                    console.error('❌ Firebase SDK NON CARICATO!');
+                    console.error('🔧 Questo è il problema!');
+                    
+                    alert('⚠️ PROBLEMA TROVATO!\n\n' +
+                          'Gli script Firebase non si stanno caricando.\n\n' +
+                          'Possibili cause:\n' +
+                          '1. Firewall/Antivirus blocca Firebase\n' +
+                          '2. Adblocker attivo\n' +
+                          '3. Problema rete\n\n' +
+                          'SOLUZIONE:\n' +
+                          '- Disattiva Adblocker\n' +
+                          '- Ricarica la pagina\n' +
+                          '- Prova in modalità incognito');
+                }
+                
+                if (typeof firebase === 'undefined') {
+                    // Fallback: usa solo localStorage
+                    console.log('📱 Attivazione modalità SOLO localStorage');
+                    window.firebaseConnected = false;
+                    window.firebaseDatabase = null;
+                    
+                    if (window.updateStatus) {
+                        window.updateStatus('📱 Modalità locale - Firebase non disponibile');
+                    }
+                }
+            }, 2000);
+        });
+        
         // ⚡ DEFINISCI updateStatus GLOBALMENTE PRIMA DI TUTTO
         function updateStatus(message) {
             console.log('📢', message);
