@@ -1068,6 +1068,152 @@
             document.body.removeChild(textarea);
         }
         
+        // 📤 CONDIVIDI VIA LINK - SISTEMA AVANZATO
+        function shareViaLink() {
+            try {
+                updateStatus('🔗 Generazione link condivisione...');
+                
+                // Comprimi i dati del torneo
+                const tournamentData = {
+                    name: currentTournament,
+                    players: players,
+                    matches: matches,
+                    playerStats: playerStats,
+                    timestamp: Date.now()
+                };
+                
+                // Converti in JSON e comprimi con base64
+                const jsonData = JSON.stringify(tournamentData);
+                const encoded = btoa(encodeURIComponent(jsonData));
+                
+                // Crea URL con dati
+                const baseUrl = window.location.origin + window.location.pathname;
+                const shareUrl = `${baseUrl}?data=${encoded}`;
+                
+                // Mostra il link
+                const modal = document.createElement('div');
+                modal.style.cssText = `
+                    position: fixed;
+                    top: 0; left: 0; right: 0; bottom: 0;
+                    background: rgba(0,0,0,0.8);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 10000;
+                `;
+                
+                modal.innerHTML = `
+                    <div style="background: white; padding: 40px; border-radius: 20px; max-width: 600px; width: 90%;">
+                        <h2 style="margin: 0 0 20px 0; color: #1f2937;">🔗 Link di Condivisione</h2>
+                        <p style="color: #6b7280; margin-bottom: 20px;">
+                            Copia questo link e invialo agli altri giocatori.<br>
+                            Quando lo apriranno, vedranno tutti i risultati aggiornati!
+                        </p>
+                        <textarea id="shareLink" readonly style="
+                            width: 100%;
+                            height: 100px;
+                            padding: 15px;
+                            border: 2px solid #3b82f6;
+                            border-radius: 10px;
+                            font-family: monospace;
+                            font-size: 12px;
+                            resize: none;
+                            margin-bottom: 20px;
+                        ">${shareUrl}</textarea>
+                        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                            <button onclick="this.parentElement.parentElement.parentElement.remove()" style="
+                                padding: 12px 24px;
+                                background: #6b7280;
+                                color: white;
+                                border: none;
+                                border-radius: 8px;
+                                cursor: pointer;
+                                font-weight: 600;
+                            ">Chiudi</button>
+                            <button onclick="
+                                document.getElementById('shareLink').select();
+                                document.execCommand('copy');
+                                alert('✅ Link copiato!');
+                            " style="
+                                padding: 12px 24px;
+                                background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+                                color: white;
+                                border: none;
+                                border-radius: 8px;
+                                cursor: pointer;
+                                font-weight: 600;
+                            ">📋 Copia Link</button>
+                        </div>
+                    </div>
+                `;
+                
+                document.body.appendChild(modal);
+                
+                // Seleziona il link
+                setTimeout(() => {
+                    document.getElementById('shareLink').select();
+                }, 100);
+                
+                updateStatus('✅ Link generato - Copialo e condividilo!');
+                
+            } catch (error) {
+                console.error('❌ Errore generazione link:', error);
+                alert('❌ Errore durante la generazione del link');
+            }
+        }
+        
+        // 📥 CARICA DA LINK
+        function loadFromURL() {
+            try {
+                const urlParams = new URLSearchParams(window.location.search);
+                const encodedData = urlParams.get('data');
+                
+                if (!encodedData) {
+                    console.log('ℹ️ Nessun dato nell\'URL');
+                    return false;
+                }
+                
+                console.log('📥 Dati trovati nell\'URL - Caricamento...');
+                updateStatus('📥 Caricamento dati dal link...');
+                
+                // Decodifica
+                const jsonData = decodeURIComponent(atob(encodedData));
+                const tournamentData = JSON.parse(jsonData);
+                
+                // Carica i dati
+                currentTournament = tournamentData.name;
+                players = tournamentData.players;
+                matches = tournamentData.matches;
+                playerStats = tournamentData.playerStats;
+                
+                // Salva in localStorage
+                saveToDatabase(`tournaments/${currentTournament}`, {
+                    players: players,
+                    matches: matches,
+                    playerStats: playerStats,
+                    lastUpdate: new Date().toISOString()
+                });
+                
+                // Mostra il torneo
+                showTournament();
+                updateAllDisplays();
+                
+                updateStatus('✅ Dati caricati dal link condiviso!');
+                
+                setTimeout(() => {
+                    alert(`✅ Torneo "${currentTournament}" caricato dal link!\n\n` +
+                          `${Object.values(matches).filter(m => m.completed).length} partite caricate.\n\n` +
+                          `Puoi ora inserire nuovi risultati!`);
+                }, 500);
+                
+                return true;
+                
+            } catch (error) {
+                console.error('❌ Errore caricamento da URL:', error);
+                return false;
+            }
+        }
+        
         // 🔄 RESET TORNEO
         async function resetTournament() {
             if (confirm('⚠️ Sei sicuro di voler resettare tutto il torneo?\n\nTutti i risultati andranno persi definitivamente.')) {
@@ -1179,6 +1325,7 @@
         window.joinTournament = joinTournament;
         window.leaveTournament = leaveTournament;
         window.copyLink = copyLink;
+        window.shareViaLink = shareViaLink;
         window.openMatchModal = openMatchModal;
         window.closeModal = closeModal;
         window.saveMatch = saveMatch;
@@ -1189,6 +1336,11 @@
         window.exportAllData = exportAllData;
         window.importData = importData;
         window.resetTournament = resetTournament;
+        
+        // 🔗 Carica dati da URL se presenti
+        setTimeout(() => {
+            loadFromURL();
+        }, 1000);
     </script>
 </body>
 </html><!DOCTYPE html>
@@ -1985,12 +2137,27 @@
             </div>
             
             <div class="section" id="exportSection" style="display: none;">
+                <button class="export-btn" onclick="shareViaLink()" style="background: linear-gradient(135deg, #10b981, #059669); font-size: 1.1em; padding: 20px 40px;">🔗 CONDIVIDI VIA LINK</button>
                 <button class="export-btn" onclick="exportToCSV()">📊 Esporta Classifica CSV</button>
                 <button class="export-btn" onclick="exportResultsToCSV()">📋 Esporta Risultati CSV</button>
                 <button class="export-btn" onclick="exportDetailedResults()">📈 Esporta Dettagliati CSV</button>
                 <button class="export-btn" onclick="exportAllData()" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">📤 Esporta JSON Completo</button>
                 <button class="export-btn" onclick="importData()" style="background: linear-gradient(135deg, #06b6d4, #0891b2);">📥 Importa JSON</button>
                 <button class="export-btn reset-btn" onclick="resetTournament()">🔄 Reset Torneo</button>
+                
+                <div style="margin-top: 30px; padding: 25px; background: linear-gradient(135deg, #fef3c7, #fde68a); border-radius: 16px; border: 2px solid #f59e0b;">
+                    <h3 style="margin: 0 0 15px 0; color: #92400e;">💡 Come condividere con altri giocatori:</h3>
+                    <ol style="margin: 0; padding-left: 20px; color: #92400e; line-height: 1.8;">
+                        <li><strong>Clicca "🔗 CONDIVIDI VIA LINK"</strong> dopo aver inserito risultati</li>
+                        <li><strong>Copia il link</strong> che appare</li>
+                        <li><strong>Invia il link</strong> agli altri via WhatsApp, Email, ecc.</li>
+                        <li><strong>Gli altri aprono il link</strong> e vedono tutti i risultati!</li>
+                        <li><strong>Quando aggiungono risultati</strong>, ri-condividono il nuovo link</li>
+                    </ol>
+                    <p style="margin: 15px 0 0 0; font-weight: 600; color: #78350f;">
+                        ⚡ Funziona sempre, anche senza database cloud!
+                    </p>
+                </div>
             </div>
         </div>
     </div>
